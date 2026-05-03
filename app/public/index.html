@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Codex Account Switch</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">C</div>
+          <div>
+            <h1>Codex Account Switch</h1>
+            <p>Beautiful local control for Codex identities</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="locale-switch" role="group" aria-label="language switch">
+            <button id="langZhButton" class="button locale-button active" type="button">中文</button>
+            <button id="langEnButton" class="button locale-button" type="button">EN</button>
+          </div>
+          <button id="refreshButton" class="button primary wide"></button>
+          <button id="addButton" class="button secondary wide"></button>
+        </div>
+        <div class="panel muted">
+          <p id="sidebarTip1"></p>
+          <p id="sidebarTip2"></p>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="hero">
+          <div>
+            <p id="heroEyebrow" class="eyebrow"></p>
+            <h2 id="heroTitle"></h2>
+          </div>
+          <div id="statusBadge" class="status-badge"></div>
+        </section>
+
+        <section id="accountsGrid" class="accounts-grid"></section>
+
+        <section class="console">
+          <div class="console-header">
+            <h3 id="consoleTitle"></h3>
+            <a id="authLink" class="button ghost hidden" target="_blank" rel="noreferrer"></a>
+          </div>
+          <pre id="logOutput"></pre>
+        </section>
+      </main>
+    </div>
+
+    <template id="accountCardTemplate">
+      <article class="account-card">
+        <div class="account-top">
+          <div>
+            <p class="account-index"></p>
+            <h3 class="account-email"></h3>
+          </div>
+          <span class="plan-pill"></span>
+        </div>
+        <div class="usage-grid">
+          <div>
+            <span class="label-5h"></span>
+            <strong class="usage-5h"></strong>
+          </div>
+          <div>
+            <span class="label-weekly"></span>
+            <strong class="usage-weekly"></strong>
+          </div>
+          <div>
+            <span class="label-last-activity"></span>
+            <strong class="last-activity"></strong>
+          </div>
+        </div>
+        <div class="card-actions">
+          <span class="active-label hidden"></span>
+          <button class="button primary switch-button"></button>
+        </div>
+      </article>
+    </template>
+
+    <script src="/app.js"></script>
+  </body>
+  </html>
