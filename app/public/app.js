@@ -5,6 +5,7 @@ const addButton = document.querySelector("#addButton");
 const authLink = document.querySelector("#authLink");
 const logOutput = document.querySelector("#logOutput");
 const template = document.querySelector("#accountCardTemplate");
+const groupTemplate = document.querySelector("#groupSectionTemplate");
 const langZhButton = document.querySelector("#langZhButton");
 const langEnButton = document.querySelector("#langEnButton");
 
@@ -18,6 +19,11 @@ const textNodes = {
 
 let loginPoll = null;
 let currentLanguage = localStorage.getItem("codex-auth-lang") || "zh";
+let accountsCache = [];
+let groupState = {
+  groups: { default: { name: "默认分组", note: "" } },
+  accountGroups: {},
+};
 
 const messages = {
   zh: {
@@ -35,6 +41,12 @@ const messages = {
     usage5hLabel: "5小时用量",
     usageWeeklyLabel: "每周用量",
     lastActivityLabel: "最近活动",
+    groupLabel: "所属分组",
+    addGroup: "新增分组",
+    newGroupName: "新分组",
+    groupNotePlaceholder: "备注这个组的用途，例如：主力号、备用号、客户项目、测试账号。",
+    savingGroups: "正在保存分组...",
+    groupsSaved: "分组已保存",
     activeNow: "当前使用中",
     active: "使用中",
     switch: "切换",
@@ -67,6 +79,12 @@ const messages = {
     usage5hLabel: "5h usage",
     usageWeeklyLabel: "Weekly usage",
     lastActivityLabel: "Last activity",
+    groupLabel: "Group",
+    addGroup: "Add group",
+    newGroupName: "New group",
+    groupNotePlaceholder: "Add a note for this group, such as primary, backup, client project, or testing.",
+    savingGroups: "Saving groups...",
+    groupsSaved: "Groups saved",
     activeNow: "Active now",
     active: "Active",
     switch: "Switch",
@@ -122,44 +140,125 @@ async function fetchJson(url, options) {
   return data;
 }
 
+function sortedGroups() {
+  const entries = Object.entries(groupState.groups || {});
+  entries.sort(([a], [b]) => {
+    if (a === "default") return -1;
+    if (b === "default") return 1;
+    return a.localeCompare(b);
+  });
+  return entries;
+}
+
+function groupIdForAccount(account) {
+  return groupState.accountGroups?.[account.accountKey] || "default";
+}
+
+function buildGroupOptions(selectedGroupId) {
+  return sortedGroups()
+    .map(([id, group]) => {
+      const selected = id === selectedGroupId ? "selected" : "";
+      return `<option value="${id}" ${selected}>${group.name}</option>`;
+    })
+    .join("");
+}
+
+async function saveGroupState() {
+  setStatus(t("savingGroups"));
+  const data = await fetchJson("/api/groups", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(groupState),
+  });
+  groupState = data.state;
+  setStatus(t("groupsSaved"));
+  renderAccounts(accountsCache);
+}
+
+function createGroup() {
+  const id = `group_${Date.now().toString(36)}`;
+  groupState.groups[id] = { name: t("newGroupName"), note: "" };
+  saveGroupState();
+}
+
+function renderAccountCard(account) {
+  const node = template.content.firstElementChild.cloneNode(true);
+  const selectedGroupId = groupIdForAccount(account);
+
+  node.querySelector(".account-index").textContent = `${t("account")} ${account.index}`;
+  node.querySelector(".account-email").textContent = account.account || account.raw || t("unknown");
+  node.querySelector(".plan-pill").textContent = account.plan || "Plan";
+  node.querySelector(".label-group").textContent = t("groupLabel");
+  node.querySelector(".label-5h").textContent = t("usage5hLabel");
+  node.querySelector(".label-weekly").textContent = t("usageWeeklyLabel");
+  node.querySelector(".label-last-activity").textContent = t("lastActivityLabel");
+  node.querySelector(".usage-5h").textContent = account.usage5h || "-";
+  node.querySelector(".usage-weekly").textContent = account.usageWeekly || "-";
+  node.querySelector(".last-activity").textContent = account.lastActivity || "-";
+
+  const groupSelect = node.querySelector(".group-select");
+  groupSelect.innerHTML = buildGroupOptions(selectedGroupId);
+  groupSelect.addEventListener("change", async () => {
+    if (!account.accountKey) return;
+    groupState.accountGroups[account.accountKey] = groupSelect.value;
+    await saveGroupState();
+  });
+
+  const activeLabel = node.querySelector(".active-label");
+  activeLabel.textContent = t("activeNow");
+  if (account.active) activeLabel.classList.remove("hidden");
+
+  const switchButton = node.querySelector(".switch-button");
+  switchButton.disabled = !!account.active;
+  switchButton.textContent = account.active ? t("active") : t("switch");
+  switchButton.addEventListener("click", async () => {
+    try {
+      setStatus(t("switching"));
+      const normalizedIndex = String(Number.parseInt(account.index, 10));
+      await fetchJson("/api/switch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ index: normalizedIndex }),
+      });
+      setStatus(t("switchedRestart"));
+      await loadAccounts();
+    } catch (error) {
+      setStatus(error.message);
+    }
+  });
+
+  return node;
+}
+
 function renderAccounts(accounts) {
   accountsGrid.innerHTML = "";
-  for (const account of accounts) {
-    const node = template.content.firstElementChild.cloneNode(true);
-    node.querySelector(".account-index").textContent = `${t("account")} ${account.index}`;
-    node.querySelector(".account-email").textContent = account.account || account.raw || t("unknown");
-    node.querySelector(".plan-pill").textContent = account.plan || "Plan";
-    node.querySelector(".label-5h").textContent = t("usage5hLabel");
-    node.querySelector(".label-weekly").textContent = t("usageWeeklyLabel");
-    node.querySelector(".label-last-activity").textContent = t("lastActivityLabel");
-    node.querySelector(".usage-5h").textContent = account.usage5h || "-";
-    node.querySelector(".usage-weekly").textContent = account.usageWeekly || "-";
-    node.querySelector(".last-activity").textContent = account.lastActivity || "-";
+  for (const [groupId, group] of sortedGroups()) {
+    const section = groupTemplate.content.firstElementChild.cloneNode(true);
+    const groupAccounts = accounts.filter((account) => groupIdForAccount(account) === groupId);
+    const nameInput = section.querySelector(".group-name-input");
+    const noteInput = section.querySelector(".group-note-input");
+    const addGroupButton = section.querySelector(".add-group-button");
+    const groupAccountsNode = section.querySelector(".group-accounts");
 
-    const activeLabel = node.querySelector(".active-label");
-    activeLabel.textContent = t("activeNow");
-    if (account.active) activeLabel.classList.remove("hidden");
+    nameInput.value = group.name;
+    noteInput.value = group.note || "";
+    noteInput.placeholder = t("groupNotePlaceholder");
+    addGroupButton.textContent = t("addGroup");
+    addGroupButton.addEventListener("click", createGroup);
 
-    const switchButton = node.querySelector(".switch-button");
-    switchButton.disabled = !!account.active;
-    switchButton.textContent = account.active ? t("active") : t("switch");
-    switchButton.addEventListener("click", async () => {
-      try {
-        setStatus(t("switching"));
-        const normalizedIndex = String(Number.parseInt(account.index, 10));
-        await fetchJson("/api/switch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ index: normalizedIndex }),
-        });
-        setStatus(t("switchedRestart"));
-        await loadAccounts();
-      } catch (error) {
-        setStatus(error.message);
-      }
+    nameInput.addEventListener("change", async () => {
+      groupState.groups[groupId].name = nameInput.value.trim() || t("newGroupName");
+      await saveGroupState();
+    });
+    noteInput.addEventListener("change", async () => {
+      groupState.groups[groupId].note = noteInput.value.trim();
+      await saveGroupState();
     });
 
-    accountsGrid.appendChild(node);
+    for (const account of groupAccounts) {
+      groupAccountsNode.appendChild(renderAccountCard(account));
+    }
+    accountsGrid.appendChild(section);
   }
 }
 
@@ -167,7 +266,9 @@ async function loadAccounts() {
   try {
     setStatus(t("loadingAccounts"));
     const data = await fetchJson("/api/accounts");
-    renderAccounts(data.accounts);
+    accountsCache = data.accounts;
+    groupState = data.state || groupState;
+    renderAccounts(accountsCache);
     setStatus(t("loadedAccounts", data.accounts.length));
   } catch (error) {
     accountsGrid.innerHTML = `<article class="account-card"><h3>${t("couldNotLoadAccounts")}</h3><p>${error.message}</p></article>`;

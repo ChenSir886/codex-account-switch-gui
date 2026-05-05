@@ -8,6 +8,7 @@ This fork keeps the original CLI workflow and adds a lightweight local GUI for:
 
 - viewing saved accounts
 - checking 5h / weekly usage snapshots
+- manually grouping accounts with editable group names and notes
 - adding accounts through official login
 - switching between accounts from a browser dashboard
 - Chinese / English UI switching
@@ -32,6 +33,14 @@ You can also use the helper launcher on macOS:
 ```shell
 ./start-gui.command
 ```
+
+Grouping data is stored locally in:
+
+```text
+~/.codex/account-switch-gui.json
+```
+
+This file is not part of the repository and should not be committed because it is personal local state.
 
 > [!NOTE]
 > Codex App keeps its own in-memory session. In practice, the safest flow is:

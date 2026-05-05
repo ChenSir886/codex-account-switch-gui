@@ -18,6 +18,7 @@ const codexHome = path.join(os.homedir(), ".codex");
 const accountsDir = path.join(codexHome, "accounts");
 const registryPath = path.join(accountsDir, "registry.json");
 const activeAuthPath = path.join(codexHome, "auth.json");
+const guiStatePath = path.join(codexHome, "account-switch-gui.json");
 
 function sendJson(res, status, payload) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
@@ -106,6 +107,68 @@ function readRegistry() {
   return JSON.parse(fs.readFileSync(registryPath, "utf8"));
 }
 
+function readGuiState() {
+  if (!fs.existsSync(guiStatePath)) {
+    return { groups: { default: { name: "默认分组", note: "" } }, accountGroups: {} };
+  }
+  try {
+    const state = JSON.parse(fs.readFileSync(guiStatePath, "utf8"));
+    return {
+      groups: state.groups && typeof state.groups === "object" ? state.groups : {},
+      accountGroups:
+        state.accountGroups && typeof state.accountGroups === "object" ? state.accountGroups : {},
+    };
+  } catch {
+    return { groups: { default: { name: "默认分组", note: "" } }, accountGroups: {} };
+  }
+}
+
+function writeGuiState(state) {
+  fs.mkdirSync(codexHome, { recursive: true });
+  fs.writeFileSync(guiStatePath, `${JSON.stringify(state, null, 2)}\n`);
+}
+
+function normalizeGuiState(input) {
+  const groups = {};
+  const accountGroups = {};
+  const rawGroups = input?.groups && typeof input.groups === "object" ? input.groups : {};
+
+  for (const [id, group] of Object.entries(rawGroups)) {
+    if (!id || typeof group !== "object") continue;
+    groups[id] = {
+      name: String(group.name || "").trim() || "未命名分组",
+      note: String(group.note || "").trim(),
+    };
+  }
+  if (!groups.default) {
+    groups.default = { name: "默认分组", note: "" };
+  }
+
+  const rawAccountGroups =
+    input?.accountGroups && typeof input.accountGroups === "object" ? input.accountGroups : {};
+  for (const [accountKey, groupId] of Object.entries(rawAccountGroups)) {
+    if (typeof groupId === "string" && groups[groupId]) {
+      accountGroups[accountKey] = groupId;
+    }
+  }
+
+  return { groups, accountGroups };
+}
+
+function accountsWithRegistry(accounts) {
+  const registry = fs.existsSync(registryPath) ? readRegistry() : { accounts: [] };
+  return accounts.map((account) => {
+    const numericIndex = Number.parseInt(account.index, 10);
+    const record = registry.accounts?.[numericIndex - 1];
+    return {
+      ...account,
+      accountKey: record?.account_key ?? null,
+      alias: record?.alias ?? "",
+      accountName: record?.account_name ?? null,
+    };
+  });
+}
+
 function switchAccountLocally(indexValue) {
   const numericIndex = Number.parseInt(String(indexValue), 10);
   if (!Number.isFinite(numericIndex) || numericIndex < 1) {
@@ -179,10 +242,31 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url.pathname === "/api/accounts") {
     try {
       const { stdout } = await runCodexAuth(["list"]);
-      sendJson(res, 200, { accounts: parseAccounts(stdout), raw: stdout });
+      sendJson(res, 200, {
+        accounts: accountsWithRegistry(parseAccounts(stdout)),
+        state: readGuiState(),
+        raw: stdout,
+      });
     } catch (error) {
       sendJson(res, 500, { error: error.message });
     }
+    return;
+  }
+
+  if (req.method === "PUT" && url.pathname === "/api/groups") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+    req.on("end", () => {
+      try {
+        const state = normalizeGuiState(JSON.parse(body || "{}"));
+        writeGuiState(state);
+        sendJson(res, 200, { ok: true, state });
+      } catch (error) {
+        sendJson(res, 500, { error: error.message });
+      }
+    });
     return;
   }
 

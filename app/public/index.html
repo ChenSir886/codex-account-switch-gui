@@ -60,6 +60,10 @@
           </div>
           <span class="plan-pill"></span>
         </div>
+        <label class="group-select-label">
+          <span class="label-group"></span>
+          <select class="group-select"></select>
+        </label>
         <div class="usage-grid">
           <div>
             <span class="label-5h"></span>
@@ -79,6 +83,19 @@
           <button class="button primary switch-button"></button>
         </div>
       </article>
+    </template>
+
+    <template id="groupSectionTemplate">
+      <section class="group-section">
+        <div class="group-header">
+          <div>
+            <input class="group-name-input" type="text" />
+            <textarea class="group-note-input" rows="2"></textarea>
+          </div>
+          <button class="button ghost add-group-button" type="button"></button>
+        </div>
+        <div class="group-accounts"></div>
+      </section>
     </template>
 
     <script src="/app.js"></script>
