@@ -8,9 +8,12 @@ This fork keeps the original CLI workflow and adds a lightweight local GUI for:
 
 - viewing saved accounts
 - checking 5h / weekly usage snapshots
-- manually grouping accounts with editable group names and notes
-- adding accounts through official login
-- switching between accounts from a browser dashboard
+- creating account groups with a name and note up front
+- editing group names and notes with an explicit save action
+- unique group names and safe group deletion
+- adding accounts through official login with automatic Codex App restart on completion
+- moving accounts to trash, restoring them, or permanently deleting trashed accounts
+- switching between accounts from a browser dashboard with automatic Codex App restart on macOS
 - Chinese / English UI switching
 
 ## GUI
@@ -42,12 +45,29 @@ Grouping data is stored locally in:
 
 This file is not part of the repository and should not be committed because it is personal local state.
 
+Group behavior:
+
+- the default group cannot be deleted
+- group names must be unique
+- new groups require a name and are not created with a placeholder name
+- deleting a group moves its accounts back to the default group
+
+Account deletion behavior:
+
+- the active account cannot be moved to trash; switch away first
+- moving an account to trash hides it but keeps the local snapshot so it can be restored
+- permanent deletion is only available from trash and calls `codex-auth remove`
+
 > [!NOTE]
-> Codex App keeps its own in-memory session. In practice, the safest flow is:
+> Codex App keeps its own in-memory session. The GUI updates `~/.codex/auth.json`, then automatically restarts Codex App on macOS after a successful switch or completed account login.
 >
-> 1. quit Codex App
-> 2. switch account in the dashboard
-> 3. reopen Codex App
+> If the GUI was launched from Codex, restarting Codex can also stop the old GUI process. The restart helper starts the GUI again in the background; if the page briefly disconnects, reopen:
+>
+> ```text
+> http://localhost:4185
+> ```
+>
+> Terminal-based switching still requires restarting Codex App or reopening the `codex` terminal session.
 
 > [!IMPORTANT]
 > For **Codex CLI** and **Codex App** users, switch accounts, then restart the client for the new account to take effect.

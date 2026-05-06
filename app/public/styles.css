@@ -57,7 +57,7 @@ body {
   font-weight: 700;
 }
 
-.panel, .hero, .account-card, .console {
+.panel, .hero, .account-card, .console, .modal-panel, .trash-section, .trash-card {
   background: var(--panel);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
@@ -86,6 +86,8 @@ body {
 .button.primary { background: linear-gradient(135deg, var(--accent), var(--accent-strong)); color: #062014; }
 .button.secondary { background: rgba(255,255,255,.06); color: var(--text); }
 .button.ghost { background: transparent; color: var(--accent); border: 1px solid rgba(102,224,163,.35); }
+.button.danger { background: rgba(255, 102, 102, .12); color: #ff9b9b; border: 1px solid rgba(255, 102, 102, .3); }
+.button:disabled { cursor: not-allowed; opacity: .45; transform: none; }
 .button.wide { width: 100%; margin-bottom: 10px; }
 .button.locale-button { background: rgba(255,255,255,.04); color: var(--muted); }
 .button.locale-button.active { background: rgba(102,224,163,.16); color: var(--text); }
@@ -114,7 +116,65 @@ body {
 .plan-pill { background: rgba(255,212,121,.12); color: var(--warning); }
 .active-label { background: rgba(93,139,255,.16); color: #8fb0ff; }
 
+.accounts-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: -4px 0 16px;
+}
+
 .accounts-grid { display: grid; gap: 18px; }
+
+.trash-section {
+  margin-top: 20px;
+  padding: 16px;
+}
+
+.trash-header,
+.trash-card,
+.trash-actions,
+.account-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trash-header {
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.trash-header h3,
+.trash-card h3,
+.trash-card p {
+  margin: 0;
+}
+
+.trash-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.trash-card {
+  justify-content: space-between;
+  padding: 16px;
+  box-shadow: none;
+}
+
+.trash-email {
+  font-size: 18px;
+  line-break: anywhere;
+}
+
+.trash-index,
+.trash-meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.trash-index { margin-bottom: 6px; }
+.trash-meta { margin-top: 8px; }
+.trash-actions { flex-wrap: wrap; justify-content: flex-end; }
+.account-actions { flex-wrap: wrap; justify-content: flex-end; }
 
 .group-section {
   border: 1px solid var(--panel-border);
@@ -131,6 +191,12 @@ body {
   margin-bottom: 16px;
 }
 
+.group-actions {
+  display: grid;
+  gap: 8px;
+  min-width: 104px;
+}
+
 .group-accounts {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -139,7 +205,9 @@ body {
 
 .group-name-input,
 .group-note-input,
-.group-select {
+.group-select,
+.form-field input,
+.form-field textarea {
   width: 100%;
   border: 1px solid var(--panel-border);
   border-radius: 8px;
@@ -190,6 +258,58 @@ body {
 
 .group-select { padding: 10px 12px; }
 
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(3, 8, 16, .72);
+  backdrop-filter: blur(12px);
+}
+
+.modal-panel {
+  width: min(520px, 100%);
+  padding: 22px;
+}
+
+.modal-panel h3 {
+  margin: 0 0 18px;
+  font-size: 22px;
+}
+
+.form-field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.form-field input,
+.form-field textarea {
+  padding: 12px;
+}
+
+.form-field textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.dialog-error {
+  min-height: 20px;
+  margin: 0 0 14px;
+  color: #ff9b9b;
+  font-size: 13px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .usage-grid {
   display: grid;
   gap: 14px;
@@ -233,4 +353,7 @@ pre {
   .shell { grid-template-columns: 1fr; }
   .sidebar { border-right: 0; border-bottom: 1px solid var(--panel-border); }
   .group-header { grid-template-columns: 1fr; }
+  .trash-card, .card-actions { align-items: stretch; flex-direction: column; }
+  .trash-actions, .account-actions { justify-content: stretch; }
+  .trash-actions .button, .account-actions .button { flex: 1; }
 }

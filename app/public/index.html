@@ -39,7 +39,19 @@
           <div id="statusBadge" class="status-badge"></div>
         </section>
 
+        <section class="accounts-toolbar">
+          <button id="createGroupButton" class="button ghost" type="button"></button>
+        </section>
+
         <section id="accountsGrid" class="accounts-grid"></section>
+
+        <section id="trashSection" class="trash-section hidden">
+          <div class="trash-header">
+            <h3 id="trashTitle"></h3>
+            <span id="trashCount" class="status-badge"></span>
+          </div>
+          <div id="trashGrid" class="trash-grid"></div>
+        </section>
 
         <section class="console">
           <div class="console-header">
@@ -49,6 +61,25 @@
           <pre id="logOutput"></pre>
         </section>
       </main>
+    </div>
+
+    <div id="groupDialog" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-panel">
+        <h3 id="groupDialogTitle"></h3>
+        <label class="form-field">
+          <span id="groupNameLabel"></span>
+          <input id="newGroupNameInput" type="text" autocomplete="off" />
+        </label>
+        <label class="form-field">
+          <span id="groupNoteLabel"></span>
+          <textarea id="newGroupNoteInput" rows="3"></textarea>
+        </label>
+        <p id="groupDialogError" class="dialog-error"></p>
+        <div class="modal-actions">
+          <button id="cancelGroupButton" class="button secondary" type="button"></button>
+          <button id="confirmGroupButton" class="button primary" type="button"></button>
+        </div>
+      </div>
     </div>
 
     <template id="accountCardTemplate">
@@ -80,7 +111,24 @@
         </div>
         <div class="card-actions">
           <span class="active-label hidden"></span>
-          <button class="button primary switch-button"></button>
+          <div class="account-actions">
+            <button class="button danger trash-account-button" type="button"></button>
+            <button class="button primary switch-button" type="button"></button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <template id="trashCardTemplate">
+      <article class="trash-card">
+        <div>
+          <p class="trash-index"></p>
+          <h3 class="trash-email"></h3>
+          <p class="trash-meta"></p>
+        </div>
+        <div class="trash-actions">
+          <button class="button secondary restore-account-button" type="button"></button>
+          <button class="button danger delete-account-button" type="button"></button>
         </div>
       </article>
     </template>
@@ -92,7 +140,10 @@
             <input class="group-name-input" type="text" />
             <textarea class="group-note-input" rows="2"></textarea>
           </div>
-          <button class="button ghost add-group-button" type="button"></button>
+          <div class="group-actions">
+            <button class="button secondary save-group-button" type="button"></button>
+            <button class="button danger delete-group-button" type="button"></button>
+          </div>
         </div>
         <div class="group-accounts"></div>
       </section>
